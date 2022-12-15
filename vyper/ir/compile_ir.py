@@ -136,7 +136,7 @@ def _rewrite_return_sequences(ir_node, label_params=None):
     if ir_node.value == "exit_to":
         # handle exit from private function
         if args[0].value == "return_pc":
-            ir_node.value = "jump"
+            ir_node.value = "jump" # TODO shall we use RJUMP?
             args[0].value = "pass"
         else:
             # handle jump to cleanup
@@ -164,7 +164,7 @@ def _assert_false():
     # use a shared failure block for common case of assert(x).
     # in the future we might want to change the code
     # at _sym_revert0 to: INVALID
-    return [_revert_label, "JUMPI"]
+    return [_revert_label, "RJUMPI"]
 
 
 def _add_postambles(asm_ops):
@@ -361,7 +361,7 @@ def _compile_to_assembly(code, withargs=None, existing_labels=None, break_dest=N
         o = []
         o.extend(_compile_to_assembly(code.args[0], withargs, existing_labels, break_dest, height))
         end_symbol = mksymbol("join")
-        o.extend(["ISZERO", end_symbol, "JUMPI"])
+        o.extend(["ISZERO", end_symbol, "RJUMPI"])
         o.extend(_compile_to_assembly(code.args[1], withargs, existing_labels, break_dest, height))
         o.extend([end_symbol, "JUMPDEST"])
         return o
@@ -371,9 +371,9 @@ def _compile_to_assembly(code, withargs=None, existing_labels=None, break_dest=N
         o.extend(_compile_to_assembly(code.args[0], withargs, existing_labels, break_dest, height))
         mid_symbol = mksymbol("else")
         end_symbol = mksymbol("join")
-        o.extend(["ISZERO", mid_symbol, "JUMPI"])
+        o.extend(["ISZERO", mid_symbol, "RJUMPI"])
         o.extend(_compile_to_assembly(code.args[1], withargs, existing_labels, break_dest, height))
-        o.extend([end_symbol, "JUMP", mid_symbol, "JUMPDEST"])
+        o.extend([end_symbol, "RJUMP", mid_symbol, "JUMPDEST"])
         o.extend(_compile_to_assembly(code.args[2], withargs, existing_labels, break_dest, height))
         o.extend([end_symbol, "JUMPDEST"])
         return o
@@ -428,7 +428,7 @@ def _compile_to_assembly(code, withargs=None, existing_labels=None, break_dest=N
 
             # stack: i, rounds
             # if (0 == rounds) { goto end_dest; }
-            o.extend(["DUP1", "ISZERO", exit_dest, "JUMPI"])
+            o.extend(["DUP1", "ISZERO", exit_dest, "RJUMPI"])
 
         # stack: start, rounds
         if start.value != 0:
@@ -460,7 +460,7 @@ def _compile_to_assembly(code, withargs=None, existing_labels=None, break_dest=N
 
         # stack: exit_i, i+1 (new_i)
         # if (exit_i != new_i) { goto entry_dest }
-        o.extend(["DUP2", "DUP2", "XOR", entry_dest, "JUMPI"])
+        o.extend(["DUP2", "DUP2", "XOR", entry_dest, "RJUMPI"])
         o.extend([exit_dest, "JUMPDEST", "POP", "POP"])
 
         return o
@@ -470,7 +470,7 @@ def _compile_to_assembly(code, withargs=None, existing_labels=None, break_dest=N
         if not break_dest:
             raise CompilerPanic("Invalid break")
         dest, continue_dest, break_height = break_dest
-        return [continue_dest, "JUMP"]
+        return [continue_dest, "RJUMP"]
     # Break from inside a for loop
     elif code.value == "break":
         if not break_dest:
@@ -480,7 +480,7 @@ def _compile_to_assembly(code, withargs=None, existing_labels=None, break_dest=N
         n_local_vars = height - break_height
         # clean up any stack items declared in the loop body
         cleanup_local_vars = ["POP"] * n_local_vars
-        return cleanup_local_vars + [dest, "JUMP"]
+        return cleanup_local_vars + [dest, "RJUMP"]
     # Break from inside one or more for loops prior to a return statement inside the loop
     elif code.value == "cleanup_repeat":
         if not break_dest:
@@ -564,7 +564,7 @@ def _compile_to_assembly(code, withargs=None, existing_labels=None, break_dest=N
     elif code.value == "assert_unreachable":
         o = _compile_to_assembly(code.args[0], withargs, existing_labels, break_dest, height)
         end_symbol = mksymbol("reachable")
-        o.extend([end_symbol, "JUMPI", "INVALID", end_symbol, "JUMPDEST"])
+        o.extend([end_symbol, "RJUMPI", "INVALID", end_symbol, "JUMPDEST"])
         return o
     # Assert (if false, exit)
     elif code.value == "assert":
@@ -694,7 +694,7 @@ def _compile_to_assembly(code, withargs=None, existing_labels=None, break_dest=N
         o = []
         for i, c in enumerate(reversed(code.args[1:])):
             o.extend(_compile_to_assembly(c, withargs, existing_labels, break_dest, height + i))
-        #o.extend(["_sym_" + str(code.args[0]), "JUMP"])
+        #o.extend(["_sym_" + str(code.args[0]), "RJUMP"])
         o.extend(["CALLF", "_sym_" + str(code.args[0])])
         return o
     # push a literal symbol
@@ -805,7 +805,7 @@ def _prune_unreachable_code(assembly):
     i = 0
     while i < len(assembly) - 1:
         # TODO: handle JUMPF, CALLF, RETF?
-        if assembly[i] in ("JUMP", "RETURN", "REVERT", "STOP") and not (
+        if assembly[i] in ("RJUMP", "RETURN", "REVERT", "STOP") and not (
             is_symbol(assembly[i + 1]) or assembly[i + 1] == "JUMPDEST"
         ):
             changed = True
@@ -823,7 +823,7 @@ def _prune_inefficient_jumps(assembly):
     while i < len(assembly) - 4:
         if (
             is_symbol(assembly[i])
-            and assembly[i + 1] == "JUMP"
+            and assembly[i + 1] == "RJUMP"
             and assembly[i] == assembly[i + 2]
             and assembly[i + 3] == "JUMPDEST"
         ):
@@ -856,7 +856,7 @@ def _merge_jumpdests(assembly):
                     if assembly[j] == current_symbol and i != j:
                         assembly[j] = new_symbol
                         changed = True
-            elif is_symbol(assembly[i + 2]) and assembly[i + 3] == "JUMP":
+            elif is_symbol(assembly[i + 2]) and assembly[i + 3] == "RJUMP":
                 # _sym_x JUMPDEST _sym_y JUMP
                 # replace all instances of _sym_x with _sym_y
                 # (except for _sym_x JUMPDEST - don't want duplicate labels)
@@ -904,11 +904,11 @@ def _merge_iszero(assembly):
     i = 0
     while i < len(assembly) - 3:
         # ISZERO ISZERO could map truthy to 1,
-        # but it could also just be a no-op before JUMPI.
+        # but it could also just be a no-op before RJUMPI.
         if (
             assembly[i : i + 2] == ["ISZERO", "ISZERO"]
             and is_symbol(assembly[i + 2])
-            and assembly[i + 3] == "JUMPI"
+            and assembly[i + 3] == "RJUMPI"
         ):
             changed = True
             del assembly[i : i + 2]
@@ -1072,7 +1072,7 @@ def assembly_to_evm(
 
         # update pc_jump_map
         # TODO: we can do better with jump vs subroutine distinction
-        if item == "JUMP":
+        if item == "RJUMP":
             last = assembly[i - 1]
             if is_symbol(last) and last.startswith("_sym_internal"):
                 if last.endswith("cleanup"):
@@ -1084,7 +1084,7 @@ def assembly_to_evm(
             else:
                 # everything else
                 line_number_map["pc_jump_map"][pc] = "-"
-        elif item in ("JUMPI", "JUMPDEST"):
+        elif item in ("RJUMPI", "JUMPDEST"):
             line_number_map["pc_jump_map"][pc] = "-"
 
         # update pc
