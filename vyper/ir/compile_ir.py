@@ -1183,7 +1183,11 @@ def assembly_to_evm(
             n = immediates_of(item)
             # TODO handle RJUMPV correctly
             if n != 0:
-                o += bytes_of_label(symbol_map[assembly[i + 1]], n)
+                c = assembly[i + 1]
+                if not is_symbol(c):
+                    c = assembly[i - 1]
+
+                o += bytes_of_label(symbol_map[c], n)
                 to_skip = 1
 
         elif item[:4] == "PUSH":
