@@ -25,11 +25,13 @@ EVM_VERSIONS: Dict[str, int] = {
     "istanbul": 2,
     "berlin": 3,
     "paris": 4,
+    "eof": 5,
+
     # ETC Forks
     "atlantis": 0,
     "agharta": 1,
 }
-DEFAULT_EVM_VERSION: str = "paris"
+DEFAULT_EVM_VERSION: str = "eof"
 
 
 # opcode as hex value
@@ -102,6 +104,8 @@ OPCODES: OpcodeMap = {
     "MSIZE": (0x59, 0, 1, 2),
     "GAS": (0x5A, 0, 1, 2),
     "JUMPDEST": (0x5B, 0, 0, 1),
+    "RJUMP": (0x5C, 0, 0, (None, None, None, None, 2)),
+    "RJUMPI": (0x5D, 1, 0, (None, None, None, None, 4)),
     "PUSH1": (0x60, 0, 1, 3),
     "PUSH2": (0x61, 0, 1, 3),
     "PUSH3": (0x62, 0, 1, 3),
