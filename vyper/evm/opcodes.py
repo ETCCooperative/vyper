@@ -25,13 +25,13 @@ EVM_VERSIONS: Dict[str, int] = {
     "istanbul": 2,
     "berlin": 3,
     "paris": 4,
-    "eof": 5,
+    "shanghai": 5,
 
     # ETC Forks
     "atlantis": 0,
     "agharta": 1,
 }
-DEFAULT_EVM_VERSION: str = "eof"
+DEFAULT_EVM_VERSION: str = "shanghai"
 
 
 # opcode as hex value
