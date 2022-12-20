@@ -187,6 +187,9 @@ OPCODES: OpcodeMap = {
     "INVALID": (0xFE, 0, 0, 0),
     "DEBUG": (0xA5, 1, 0, 0),
     "BREAKPOINT": (0xA6, 0, 0, 0),
+    "CALLF": (0xB0, 0, 0, (None, None, None, None, 5)),
+    "RETF": (0xB1, 0, 0, (None, None, None, None, 4)),
+    "JUMPF": (0xB2, 0, 0, (None, None, None, None, 4)),
 }
 
 PSEUDO_OPCODES: OpcodeMap = {
