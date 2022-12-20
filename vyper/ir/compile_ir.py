@@ -3,7 +3,7 @@ import functools
 import math
 
 from vyper.codegen.ir_node import IRnode
-from vyper.evm.opcodes import get_opcodes, get_opcode
+from vyper.evm.opcodes import get_opcodes, get_opcode, version_check
 from vyper.exceptions import CodegenPanic, CompilerPanic
 from vyper.utils import MemoryPositions
 from vyper.version import version_tuple
@@ -12,8 +12,7 @@ PUSH_OFFSET = 0x5F
 DUP_OFFSET = 0x7F
 SWAP_OFFSET = 0x8F
 
-## TODO: replace with actual version handling
-EOF_ENABLED = True
+EOF_ENABLED = version_check("eof")
 
 def JUMPI() -> str:
     return "RJUMPI" if EOF_ENABLED else "JUMPI"
