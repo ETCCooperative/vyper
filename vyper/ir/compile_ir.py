@@ -781,7 +781,7 @@ def _prune_unreachable_code(assembly):
     changed = False
     i = 0
     while i < len(assembly) - 1:
-        if assembly[i] in ("JUMP", "RETURN", "REVERT", "STOP") and not (
+        if assembly[i] in ("JUMP", "RJUMP", "RETURN", "REVERT", "STOP") and not (
             is_symbol(assembly[i + 1]) or assembly[i + 1] == "JUMPDEST"
         ):
             changed = True
@@ -799,7 +799,7 @@ def _prune_inefficient_jumps(assembly):
     while i < len(assembly) - 4:
         if (
             is_symbol(assembly[i])
-            and assembly[i + 1] == "JUMP"
+            and assembly[i + 1] in ("JUMP", "RJUMP")
             and assembly[i] == assembly[i + 2]
             and assembly[i + 3] == "JUMPDEST"
         ):
@@ -810,7 +810,6 @@ def _prune_inefficient_jumps(assembly):
             i += 1
 
     return changed
-
 
 def _merge_jumpdests(assembly):
     # When we have multiple JUMPDESTs in a row, or when a JUMPDEST
@@ -832,7 +831,7 @@ def _merge_jumpdests(assembly):
                     if assembly[j] == current_symbol and i != j:
                         assembly[j] = new_symbol
                         changed = True
-            elif is_symbol(assembly[i + 2]) and assembly[i + 3] == "JUMP":
+            elif is_symbol(assembly[i + 2]) and assembly[i + 3] in ("JUMP", "RJUMP"):
                 # _sym_x JUMPDEST _sym_y JUMP
                 # replace all instances of _sym_x with _sym_y
                 # (except for _sym_x JUMPDEST - don't want duplicate labels)
