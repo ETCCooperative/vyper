@@ -1101,6 +1101,8 @@ def assembly_to_evm(
             pc -= 1
         elif item == "BLANK":
             pc += 0
+        elif item == "JUMPDEST" and EOFv1_ENABLED:
+            pc += 0
         elif isinstance(item, str) and item.startswith("_DEPLOY_MEM_OFST_"):
             # _DEPLOY_MEM_OFST is assembly magic which will
             # get removed during final assembly-to-bytecode
@@ -1141,6 +1143,9 @@ def assembly_to_evm(
 
         if item in ("DEBUG", "BLANK"):
             continue  # skippable opcodes
+        # When EOFv1 enabled skip emiting JUMPDESTs
+        elif item == "JUMPDEST" and EOFv1_ENABLED:
+            continue  
 
         elif isinstance(item, str) and item.startswith("_DEPLOY_MEM_OFST_"):
             continue
