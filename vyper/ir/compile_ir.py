@@ -1003,7 +1003,6 @@ def decorateWithEOFHeader(bytecode: bytes) -> bytes:
     header += bytes([eof.S_CODE])
     header += code_sections_len.to_bytes(2, "big")
 
-    header += bytes([0x01])          # single code section
     header += len(bytecode).to_bytes(2, "big")
 
     header += bytes([eof.S_DATA])
