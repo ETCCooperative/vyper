@@ -100,7 +100,7 @@ OPCODES: OpcodeMap = {
     "SSTORE": (0x55, 2, 0, 20000),
     "JUMP": (0x56, 1, 0, 8),
     "JUMPI": (0x57, 2, 0, 10),
-    "PC": (0x58, 0, 1, 2),
+    "PC": (0x58, 0, 1, (2, 2, 2, 2, None)),
     "MSIZE": (0x59, 0, 1, 2),
     "GAS": (0x5A, 0, 1, 2),
     "JUMPDEST": (0x5B, 0, 0, 1),
@@ -190,7 +190,6 @@ OPCODES: OpcodeMap = {
     "BREAKPOINT": (0xA6, 0, 0, 0),
     "CALLF": (0xB0, 0, 0, (None, None, None, None, 5)),
     "RETF": (0xB1, 0, 0, (None, None, None, None, 4)),
-    "JUMPF": (0xB2, 0, 0, (None, None, None, None, 4)),
 }
 
 PSEUDO_OPCODES: OpcodeMap = {
@@ -225,7 +224,7 @@ PSEUDO_OPCODES: OpcodeMap = {
 IR_OPCODES: OpcodeMap = {**OPCODES, **PSEUDO_OPCODES}
 
 # Terminating opcodes for EOFv1 support
-TERMINATING_OPCODES = ["STOP", "RETF", "JUMPF", "RETURN", "REVERT", "INVALID"]
+TERMINATING_OPCODES = ["STOP", "RETF", "RETURN", "REVERT", "INVALID"]
 
 def evm_wrapper(fn, *args, **kwargs):
     def _wrapper(*args, **kwargs):
