@@ -305,8 +305,11 @@ def _build_legacy_opcodes(bytecode: bytes) -> str:
 
 def _build_eof_opcodes(bytecode: bytes) -> str:
     eofReader = eof.EOFReader(bytecode)
+    print("----DEPLOY----")
+    print(eofReader.disassemble())
     if (eofReader.bytecode_size != len(bytecode)):
         runtimeEofReader = eof.EOFReader(bytecode[eofReader.bytecode_size:])
+        print("----RUNTIME----")
         print(runtimeEofReader.disassemble())
     return ""
 
