@@ -3,7 +3,7 @@ import functools
 import math
 
 from vyper.codegen.ir_node import IRnode
-from vyper.evm.opcodes import get_opcodes, get_opcode, version_check, immediate_size
+from vyper.evm.opcodes import get_opcodes, get_opcode, version_check
 from vyper.evm import eof
 from vyper.exceptions import CodegenPanic, CompilerPanic
 from vyper.utils import MemoryPositions
@@ -699,9 +699,11 @@ def _compile_to_assembly(code, withargs=None, existing_labels=None, break_dest=N
             raise CodegenPanic("exit_to not implemented on non EOFv1")
 
         o = []
-        args = code.args[1:] 
+        args = code.args[1:]
 
         for i, c in enumerate(reversed(args)):
+            if c.value == "return_pc":
+                continue
             o.extend(_compile_to_assembly(c, withargs, existing_labels, break_dest, height + i))
         
         if str(code.args[0]) == "return_pc":
