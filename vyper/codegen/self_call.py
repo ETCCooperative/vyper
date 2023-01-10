@@ -3,12 +3,9 @@ from vyper.codegen.core import _freshname, eval_once_check, make_setter
 from vyper.codegen.ir_node import IRnode, push_label_to_stack
 from vyper.codegen.types import TupleType
 from vyper.exceptions import StateAccessViolation, StructureException
-from vyper.evm.opcodes import version_check
-
-EOFv1_ENABLED = version_check("shanghai")
+from vyper.evm.opcodes import is_eof_enabled
 
 _label_counter = 0
-
 
 # TODO a more general way of doing this
 def _generate_label(name: str) -> str:
@@ -92,12 +89,12 @@ def ir_for_self_call(stmt_expr, context):
     if return_buffer is not None:
         goto_op += [return_buffer]
     # pass return label to subroutine
-    if not EOFv1_ENABLED:
+    if not is_eof_enabled():
         goto_op += [push_label_to_stack(return_label)]
 
     call_sequence = ["seq"]
     call_sequence.append(eval_once_check(_freshname(stmt_expr.node_source_code)))
-    if EOFv1_ENABLED:
+    if is_eof_enabled():
         call_sequence.extend([copy_args, goto_op])
     else:
         call_sequence.extend([copy_args, goto_op, ["label", return_label, ["var_list"], "pass"]])
