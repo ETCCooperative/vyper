@@ -11,7 +11,7 @@ from vyper.codegen.ir_node import IRnode
 from vyper.ir import compile_ir, optimizer
 from vyper.semantics import set_data_positions, validate_semantics
 from vyper.typing import InterfaceImports, StorageLayout
-
+from vyper.evm.opcodes import version_check
 
 class CompilerData:
     """
@@ -53,6 +53,7 @@ class CompilerData:
         storage_layout: StorageLayout = None,
         show_gas_estimates: bool = False,
         no_bytecode_metadata: bool = False,
+        experimental_eof: bool = False,
     ) -> None:
         """
         Initialization method.
@@ -84,6 +85,7 @@ class CompilerData:
         self.storage_layout_override = storage_layout
         self.show_gas_estimates = show_gas_estimates
         self.no_bytecode_metadata = no_bytecode_metadata
+        self.experimental_eof = experimental_eof
 
     @cached_property
     def vyper_module(self) -> vy_ast.Module:
@@ -146,15 +148,25 @@ class CompilerData:
 
     @cached_property
     def bytecode(self) -> bytes:
-        return generate_bytecode(
-            self.assembly, is_runtime=False, no_bytecode_metadata=self.no_bytecode_metadata
-        )
+        if self.experimental_eof:
+            return generate_EOFv1(
+                self.assembly, no_bytecode_metadata=self.no_bytecode_metadata
+            )
+        else:
+            return generate_bytecode(
+                self.assembly, is_runtime=False, no_bytecode_metadata=self.no_bytecode_metadata
+            )
 
     @cached_property
     def bytecode_runtime(self) -> bytes:
-        return generate_bytecode(
-            self.assembly_runtime, is_runtime=True, no_bytecode_metadata=self.no_bytecode_metadata
-        )
+        if self.experimental_eof:
+            return generate_EOFv1(
+                self.assembly_runtime, no_bytecode_metadata=self.no_bytecode_metadata
+            )
+        else:
+            return generate_bytecode(
+                self.assembly_runtime, is_runtime=True, no_bytecode_metadata=self.no_bytecode_metadata
+            )
 
     @cached_property
     def blueprint_bytecode(self) -> bytes:
@@ -332,5 +344,12 @@ def generate_bytecode(
         Final compiled bytecode.
     """
     return compile_ir.assembly_to_evm(
-        assembly, insert_vyper_signature=is_runtime, disable_bytecode_metadata=no_bytecode_metadata
+        assembly, emit_headers=is_runtime, disable_bytecode_metadata=no_bytecode_metadata
     )[0]
+
+def generate_EOFv1(assembly: list, no_bytecode_metadata: bool = False) -> bytes:
+    bytecode, _ = compile_ir.assembly_to_evm(
+        assembly, emit_headers=True, disable_bytecode_metadata=no_bytecode_metadata, eof_enabled=True
+    )
+
+    return bytecode
